@@ -20,7 +20,8 @@ module.exports = function (options = {}) {
         priority: undefined,
         spacing: '    ',
         verbose: false,
-        noindex: false
+        noindex: false,
+        indexReplace: ['html']
     });
     const entries = [];
     let firstFile;
