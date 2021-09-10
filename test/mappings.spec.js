@@ -197,6 +197,7 @@ describe('mappings', function() {
             contents.should.match(/www.amazon.ru/i);
             contents.should.match(/hreflang="de"/i);
             contents.should.match(/www.amazon.de/i);
+            contents.should.containEql('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">');
         }).on('end', cb);
 
         stream.write(new Vinyl(dummyFile));
@@ -217,6 +218,7 @@ describe('mappings', function() {
         stream.on('data', function(data) {
             const contents = data.contents.toString();
             contents.should.match(/\/test<\/loc>/i);
+            contents.should.containEql('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">');
         }).on('end', cb);
 
         stream.write(new Vinyl(dummyFile));
@@ -240,6 +242,7 @@ describe('mappings', function() {
         stream.on('data', function(data) {
             const contents = data.contents.toString();
 
+            contents.should.containEql('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">');
             contents.should.containEql('<image:loc>https://via.placeholder.com/300/09f/fff.png</image:loc>');
             contents.should.containEql('<image:loc>http://www.amazon.com/assets/images/placeholder.jpg</image:loc>');
             contents.should.containEql('<image:loc>https://via.placeholder.com/300/09f/000.png</image:loc>');
@@ -276,6 +279,32 @@ describe('mappings', function() {
             contents.should.not.containEql('</image:loc>');
             contents.should.not.containEql('<image:image>');
             contents.should.not.containEql('</image:image>');
+
+        }).on('end', cb);
+
+        stream.write(new Vinyl(dummyFile));
+
+        stream.end();
+    });
+
+    it('should add propper video xmlns', function (cb) {
+
+        const dummyFile = {
+            cwd: __dirname,
+            base: __dirname,
+            path: 'test/fixtures/videos.html',
+            contents: Buffer.from('hello there')
+        };
+
+        const stream = sitemap({
+            siteUrl: 'http://www.amazon.com',
+            videos: true
+        });
+
+        stream.on('data', function(data) {
+            const contents = data.contents.toString();
+
+            contents.should.containEql('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">');
 
         }).on('end', cb);
 
