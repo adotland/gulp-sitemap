@@ -6,6 +6,10 @@ const path = require('path');
 const PluginError = require('plugin-error');
 const through = require('through2');
 const Vinyl = require('vinyl');
+const fs = require('fs');
+const { promisify } = require('util');
+const fsReadFile = promisify(fs.readFile);
+const slash = require('slash');
 
 const pluginName = 'gulp-sitemap';
 const sitemap = require('./lib/sitemap');
@@ -21,7 +25,8 @@ module.exports = function (options = {}) {
         spacing: '    ',
         verbose: false,
         noindex: false,
-        indexReplace: ['html']
+        indexReplace: ['html'],
+        expand: {}
     });
     const entries = [];
     let firstFile;
@@ -40,7 +45,7 @@ module.exports = function (options = {}) {
         config.siteUrl = config.siteUrl + '/';
     }
 
-    return through.obj(function (file, enc, callback) {
+    return through.obj(async function (file, enc, callback) {
             //we handle null files (that have no contents), but not dirs
             if (file.isDirectory()) {
                 return callback(null, file);
@@ -67,8 +72,26 @@ module.exports = function (options = {}) {
                 firstFile = file;
             }
 
-            const entry = sitemap.getEntryConfig(file, config);
-            entries.push(entry);
+            const normalizedPath = slash(file.relative);
+
+            if (Object.keys(config.expand).includes(normalizedPath)) {
+                // create an entry for each data object using file name
+                try {
+                    const pathData = await fsReadFile(config.expand[normalizedPath]['dataFile']);
+                    const urlExpandData = JSON.parse(pathData);
+                    urlExpandData.forEach(urlExpand => {
+                      const urlExtension = urlExpand[config.expand[normalizedPath]['key']];
+                      const entry = sitemap.getEntryConfig(file, config, urlExtension);
+                      entries.push(entry);
+                    });
+                } catch (e) {
+                    log(`[sitemap] error processing entry: ${file.path}`, e);
+                }
+            } else {
+                const entry = sitemap.getEntryConfig(file, config);
+                entries.push(entry);
+            }
+
             callback();
         },
         function (callback) {
