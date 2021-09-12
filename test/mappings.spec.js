@@ -312,4 +312,71 @@ describe('mappings', function() {
 
         stream.end();
     });
+
+
+    it('should add expanded urls for nested file', function (cb) {
+
+        const dummyFile = {
+            cwd: __dirname,
+            base: __dirname,
+            path: 'test/fixtures/videos/index.html',
+            contents: Buffer.from('hello there')
+        };
+
+        const stream = sitemap({
+            siteUrl: 'http://www.amazon.com',
+            videos: true,
+            expand: {
+                'fixtures/videos/index.html': {
+                    'dataFile': 'test/fixtures/data/test.json',
+                    'key': 'title'
+                }
+            }
+        });
+
+        stream.on('data', function(data) {
+            const contents = data.contents.toString();
+            contents.should.containEql('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">');
+            contents.should.containEql('<loc>http://www.amazon.com/fixtures/videos/lorem</loc>');
+            contents.should.containEql('<loc>http://www.amazon.com/fixtures/videos/ipsum</loc>');
+
+        }).on('end', cb);
+
+        stream.write(new Vinyl(dummyFile));
+
+        stream.end();
+    });
+
+    it('should add expanded urls for file', function (cb) {
+
+        const dummyFile = {
+            cwd: __dirname,
+            base: __dirname,
+            path: 'test/fixtures/videos.php',
+            contents: Buffer.from('hello there')
+        };
+
+        const stream = sitemap({
+            siteUrl: 'http://www.amazon.com',
+            videos: true,
+            expand: {
+                'fixtures/videos.php': {
+                    'dataFile': 'test/fixtures/data/test.json',
+                    'key': 'title'
+                }
+            }
+        });
+
+        stream.on('data', function(data) {
+            const contents = data.contents.toString();
+            contents.should.containEql('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">');
+            contents.should.containEql('<loc>http://www.amazon.com/fixtures/videos/lorem</loc>');
+            contents.should.containEql('<loc>http://www.amazon.com/fixtures/videos/ipsum</loc>');
+
+        }).on('end', cb);
+
+        stream.write(new Vinyl(dummyFile));
+
+        stream.end();
+    });
 });
